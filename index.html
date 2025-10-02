@@ -1,1 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Truco Paulista</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    #scoreboard {
+      display: flex;
+      justify-content: space-around;
+      font-size: 1.2em;
+      margin: 10px;
+    }
+    #viraContainer {
+      margin: 20px;
+    }
+    #table {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px;
+    }
+    #playerHand {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+    }
+    .card {
+      padding: 10px;
+      background: white;
+      border: 1px solid #333;
+      cursor: pointer;
+      width: 60px;
+    }
+    #actions button {
+      margin: 5px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Truco Paulista</h1>
+  <div id="scoreboard">
+    <span>Você: <span id="playerScore">0</span></span>
+    <span>Bot: <span id="botScore">0</span></span>
+  </div>
+  <div id="viraContainer">
+    <h2>Vira:</h2>
+    <div id="viraCard"></div>
+  </div>
+  <div id="table">
+    <div>
+      <h3>Bot jogou:</h3>
+      <div id="botPlay"></div>
+    </div>
+    <div>
+      <h3>Você jogou:</h3>
+      <div id="playerPlay"></div>
+    </div>
+  </div>
+  <div id="playerHand"></div>
+  <div id="actions">
+    <button onclick="requestTruco()">Pedir Truco</button>
+    <button onclick="acceptTruco()">Quero</button>
+    <button onclick="declineTruco()">Não Quero</button>
+  </div>
+
+  <script>
+    const deck = ["4", "5", "6", "7", "Q", "J", "K", "A", "2", "3"];
+    let playerScore = 0;
+    let botScore = 0;
+    let playerHand = [];
+    let botHand = [];
+    let vira = "";
+    let manilhas = [];
+
+    function shuffleDeck() {
+      return [...deck].sort(() => Math.random() - 0.5);
+    }
+
+    function defineVira() {
+      const shuffled = shuffleDeck();
+      vira = shuffled[0];
+      const index = deck.indexOf(vira);
+      manilhas = [deck[(index + 1) % deck.length]];
+      document.getElementById("viraCard").innerText = vira;
+    }
+
+    function dealCards() {
+      const shuffled = shuffleDeck();
+      playerHand = shuffled.slice(0, 3);
+      botHand = shuffled.slice(3, 6);
+      renderHand();
+    }
+
+    function renderHand() {
+      const handDiv = document.getElementById("playerHand");
+      handDiv.innerHTML = "";
+      playerHand.forEach((card, i) => {
+        const cardDiv = document.createElement("div");
+        cardDiv.className = "card";
+        cardDiv.innerText = card;
+        cardDiv.onclick = () => playCard(i);
+        handDiv.appendChild(cardDiv);
+      });
+    }
+
+    function playCard(index) {
+      const card = playerHand.splice(index, 1)[0];
+      document.getElementById("playerPlay").innerText = card;
+      botPlay(card);
+      renderHand();
+    }
+
+    function botPlay(playerCard) {
+      const botCard = chooseBotCard(playerCard);
+      botHand = botHand.filter(c => c !== botCard);
+      document.getElementById("botPlay").innerText = botCard;
+      evaluateRound(playerCard, botCard);
+    }
+
+    function chooseBotCard(playerCard) {
+      const rank = card => manilhas.includes(card) ? 100 : deck.indexOf(card);
+      const playerRank = rank(playerCard);
+      const sorted = botHand.sort((a, b) => rank(a) - rank(b));
+      if (playerRank < rank(sorted[2])) return sorted[2]; // tenta matar
+      if (playerRank > rank(sorted[0])) return sorted[0]; // descarta
+      return sorted[1]; // segura
+    }
+
+    function evaluateRound(playerCard, botCard) {
+      const rank = card => manilhas.includes(card) ? 100 : deck.indexOf(card);
+      const playerRank = rank(playerCard);
+      const botRank = rank(botCard);
+
+      if (playerRank > botRank) playerScore++;
+      else botScore++;
+
+      updateScore();
+      if (playerScore >= 12 || botScore >= 12) endGame();
+      else dealCards();
+    }
+
+    function updateScore() {
+      document.getElementById("playerScore").innerText = playerScore;
+      document.getElementById("botScore").innerText = botScore;
+    }
+
+    function endGame() {
+      alert(playerScore > botScore ? "Você venceu!" : "Bot venceu!");
+      playerScore = 0;
+      botScore = 0;
+      updateScore();
+      startGame();
+    }
+
+    function requestTruco() {
+      const botAccepts = Math.random() > 0.5;
+      if (botAccepts) alert("Bot aceitou o Truco!");
+      else {
+        alert("Bot correu!");
+        playerScore += 3;
+        updateScore();
+        dealCards();
+      }
+    }
+
+    function acceptTruco() {
+      alert("Você aceitou o Truco!");
+    }
+
+    function declineTruco() {
+      alert("Você correu!");
+      botScore += 3;
+      updateScore();
+      dealCards();
+    }
+
+    function startGame() {
+      defineVira();
+      dealCards();
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
 
